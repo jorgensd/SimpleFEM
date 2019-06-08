@@ -133,8 +133,6 @@ def b_local(e,f):
         phi_i = basis[i]
         for c_x in range(len(weights)):
             for c_y in range(len(weights)):
-
-                #Mass matrix
                 B_e[i] += weights[c_x]*weights[c_y]*detDp*(
                     (f(x,y)*phi_i).replace("xi", points[c_x]).
                     replace("eta", points[c_y]))
@@ -149,18 +147,46 @@ def rhs(f):
     return B
 
 
-
+    
 A= MassMatrix()
 f = lambda x,y: 4*(-y**2+y)*sp.sin(sp.pi*x)
 L = rhs(f)
 
 bc_apply(A, L)
 u_h = np.linalg.solve(A, L)
+
+
 print("my solution")
-print(u_h)
+#print(u_h)
 
 
 # Reference
+
+def J_local(e,coeffs):
+    # Global coordinates for an element
+    x = sum([vertices[dofmap(e,i)][0]*basis[i] for i in range(4)])
+    y = sum([vertices[dofmap(e,i)][1]*basis[i] for i in range(4)])
+    detDp = np.abs(x.diff("xi")*y.diff("eta")
+                -x.diff("eta")*y.diff("xi"))
+
+    quad_degree = 3
+    points, weights = special.p_roots(quad_degree)
+    loc = 0
+    for i in range(4):
+        for c_x in range(len(weights)):
+            for c_y in range(len(weights)):
+                loc +=  weights[c_x]*weights[c_y]*detDp*(
+                    coeffs[dofmap(e,i)]*basis[i].replace("xi", points[c_x]).
+                    replace("eta", points[c_y]))
+    return loc
+    
+def J(u_h):
+    value = 0
+    for e in range(len(cells)):
+        value += J_local(e,u_h)
+    return value
+
+print(J(u_h))
 
 from dolfin import *
 mesh = UnitSquareMesh.create(Nx,Ny, CellType.Type.quadrilateral)
@@ -178,4 +204,5 @@ bc.apply(A, B)
 u_h = Function(V)
 solve(A, u_h.vector(), B)
 print("reference")
-print(u_h.vector().get_local())
+#print(u_h.vector().get_local())
+print(assemble(u_h*dx))
