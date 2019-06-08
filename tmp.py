@@ -42,13 +42,14 @@ def mesh(nx, ny):
             v2 = v0 + nx+1
             v3 = v1 + nx+1
             cells[cell,:] = v0, v1, v3, v2;  cell += 1
-    
-    return vertices, cells
+    X, Y = np.meshgrid(x, y)
+    grid = (X, Y)
+    return vertices, cells, grid
 
 xi = sp.Symbol("xi")
 eta = sp.Symbol("eta")
-Nx, Ny = 3,4
-vertices, cells = mesh(Nx, Ny)
+Nx, Ny = 5,5
+vertices, cells, grid = mesh(Nx, Ny)
 dofmap = lambda e,r : cells[e,r]
 
 def A_local(e):
@@ -151,7 +152,51 @@ u_h = np.linalg.solve(A, L)
 
 print("my solution")
 print(u_h)
+import matplotlib.pyplot as plt
+import matplotlib.collections as mplc
+from sympy.plotting import plot3d
+x_ , y_ = sp.symbols("x y")
 
+
+# def plot(vertices, cells, u_h):
+#     cell_vertex_coordinates = []
+#     u_s = []
+#     for i in range(len(cells)):
+#         local_vertex_num = cells[i,:]
+#         l_coor = vertices[local_vertex_num,:]
+#         print(l_coor)
+#         u_local = 0
+#         for j in range(4):
+#             u_local += u_h[local_vertex_num[j]]*basis[j]
+#         x_min,x_max = min(l_coor[:,0]), max(l_coor[:,0])
+#         y_min,y_max = min(l_coor[:,1]), max(l_coor[:,1])
+#         print(x_min, x_max, y_min, y_max)
+#         u_glob = u_local.replace("xi",
+#                                  2*(x_-x_min)/(x_max-x_min))
+#         u_glob = u_glob.replace("eta",
+#                                 2*(y_-y_min)/(y_max-y_min))
+
+#         u_s.append(u_glob)
+#         exit(1)
+#         cell_vertex_coordinates.append(l_coor)
+#     tup = ()
+#     for i in range(0,len(cells)):
+#         tup = tup +(u_s[i],
+#                          (x_,cell_vertex_coordinates[i][0,0],
+#                           cell_vertex_coordinates[i][2,0]),
+#                          (y_, cell_vertex_coordinates[0][0,1],
+#                           cell_vertex_coordinates[i][2,1]),)
+#     plot3d(*tup)
+#     plt.savefig("fullpicture.png")
+
+def plot(vertices, cells, u_h, grid):
+    u_plot = u_h.reshape(grid[0].shape)
+    xx, yy = grid
+    plt.imshow(u_plot, interpolation="bilinear", aspect="equal")
+    plt.savefig("result.png")
+
+plot(vertices, cells, u_h,grid)
+exit(1)  
 def J_local(e,coeffs):
     # Global coordinates for an element
     x = sum([vertices[dofmap(e,i)][0]*basis[i] for i in range(4)])
@@ -179,10 +224,6 @@ def J(u_h):
 print(J(u_h))
 import matplotlib.pyplot as plt
 
-embed()
-showMeshPlot(vertices, cells, u_h)
-
-embed()
 
 from dolfin import *
 def dolfin_comparasion():
