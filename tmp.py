@@ -48,7 +48,7 @@ def mesh(nx, ny):
 
 xi = sp.Symbol("xi")
 eta = sp.Symbol("eta")
-Nx, Ny = 5,5
+Nx, Ny = 3,3
 vertices, cells, grid = mesh(Nx, Ny)
 dofmap = lambda e,r : cells[e,r]
 
@@ -191,12 +191,16 @@ x_ , y_ = sp.symbols("x y")
 
 def plot(vertices, cells, u_h, grid):
     u_plot = u_h.reshape(grid[0].shape)
-    xx, yy = grid
-    plt.imshow(u_plot, interpolation="bilinear", aspect="equal")
+    plt.contourf(grid[0],grid[1], u_plot)
+    # plt.imshow(u_plot, interpolation="bilinear", aspect="equal", origin="lower")
+    embed()
+    for i in range(len(cells)):
+        print(cells[i])
+        plt.plot(vertices[cells[i],0], vertices[cells[i], 1], "ro")       
     plt.savefig("result.png")
 
 plot(vertices, cells, u_h,grid)
-exit(1)  
+
 def J_local(e,coeffs):
     # Global coordinates for an element
     x = sum([vertices[dofmap(e,i)][0]*basis[i] for i in range(4)])
