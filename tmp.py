@@ -5,12 +5,19 @@ from IPython import embed
 
 xi = sp.Symbol("xi")
 eta = sp.Symbol("eta")
-p00,p10,p11,p01 = sp.symbols("p00,p10,p11,p01")
-
 basis = [(xi-1)*(eta-1)/4,
          -(xi+1)*(eta-1)/4,
          (xi+1)*(eta+1)/4,
          -(xi-1)*(eta+1)/4]
+x00,x10,x11,x01 = sp.symbols("x00,x10,x11,x01")
+y00,y10,y11,y01 = sp.symbols("y00,y10,y11,y01")
+x_ = [x00,x10,x11,x01]
+y_ = [y00,y10,y11,y01]
+cx_basis = sum([x_[i]*basis[i] for i in range(4)])
+cy_basis = sum([y_[i]*basis[i] for i in range(4)])
+Jac = sp.Matrix([[cx_basis.diff(xi), cx_basis.diff(eta)],
+                 [cy_basis.diff(xi), cy_basis.diff(eta)]])
+
 grads = [sp.Matrix([[sp.diff(basis[i], "xi")],
                     [sp.diff(basis[i], "eta")]]) for i in range(4)]
 
@@ -50,40 +57,47 @@ def mesh(nx, ny):
 
 xi = sp.Symbol("xi")
 eta = sp.Symbol("eta")
-Nx, Ny = 10,10
+Nx, Ny = 25,25
 vertices, cells, grid = mesh(Nx, Ny)
 dofmap = lambda e,r : cells[e,r]
+
+
 
 def A_local(e, quad_degree=4):
     A_e = np.zeros((4,4))
     # Global coordinates for an element
-    x = sum([vertices[dofmap(e,i)][0]*basis[i] for i in range(4)])
-    y = sum([vertices[dofmap(e,i)][1]*basis[i] for i in range(4)])
-    detDp = np.abs(x.diff("xi")*y.diff("eta")
-                -x.diff("eta")*y.diff("xi"))
-    Jac = sp.Matrix([[x.diff("xi"), x.diff("eta")],
-                     [y.diff("xi"), y.diff("eta")]])
-
+    x_map = cx_basis.subs([(x_[i], vertices[dofmap(e,i)][0]) for i in range(4)])
+    y_map = cy_basis.subs([(y_[i], vertices[dofmap(e,i)][1]) for i in range(4)])
+    # Local Jacobian of determinant
+    detJac_loc = Jac.det().subs([(x_[i], vertices[dofmap(e,i)][0])
+                                 for i in range(4)])
+    detJac_loc = detJac_loc.subs([(y_[i], vertices[dofmap(e,i)][1])
+                                  for i in range(4)])
+    # Local Jacobian
+    Jac_loc = Jac.subs([(x_[i], vertices[dofmap(e,i)][0])
+                        for i in range(4)])
+    Jac_loc = Jac_loc.subs([(y_[i], vertices[dofmap(e,i)][1])
+                             for i in range(4)])
 
     points, weights = special.p_roots(quad_degree)
 
     for i in range(4):
         for j in range(4):
-            phi_i = basis[i]
-            phi_j = basis[j]
+            # Looping over quadrature points on ref element
             for c_x in range(len(weights)):
                 for c_y in range(len(weights)):
                     # Stiffness Matrix
-                    Jac_loc = Jac.replace("xi", points[c_x]).replace("eta", points[c_y])
+                    Jac_loc = Jac_loc.subs([("xi", points[c_x]),
+                                            ("eta", points[c_y])])
+                    A_e[i,j] += weights[c_x]*weights[c_y]*detJac_loc*(
+                        (sp.transpose(Jac_loc.inv()*grads[j])
+                         *Jac_loc.inv()*grads[i])
+                        .subs([("xi", points[c_x]),("eta", points[c_y])])[0,0])
 
-                    A_e[i,j] += weights[c_x]*weights[c_y]*detDp*(
-                        (sp.transpose(Jac_loc.inv()*grads[j])*Jac_loc.inv()*grads[i]).replace("xi", points[c_x]).
-                        replace("eta", points[c_y]))[0,0]
-
-                    #Mass matrix
+                    # #Mass matrix
                     # A_e[i,j] += weights[c_x]*weights[c_y]*detDp*(
-                    #     (phi_i*phi_j).replace("xi", points[c_x]).
-                    #     replace("eta", points[c_y]))
+                    #     (basis[i]*basis[j]).subs([("xi", points[c_x]),
+                    #                               ("eta", points[c_y])])
     return A_e
 
 def MassMatrix(quad_degree=4):
@@ -118,21 +132,24 @@ def bc_apply(A, b):
 
 def b_local(e,f, quad_degree=4):
     B_e = np.zeros((4))
+
     # Global coordinates for an element
-    x = sum([vertices[dofmap(e,i)][0]*basis[i] for i in range(4)])
-    y = sum([vertices[dofmap(e,i)][1]*basis[i] for i in range(4)])
-    detDp = np.abs(x.diff("xi")*y.diff("eta")
-                -x.diff("eta")*y.diff("xi"))
+    x_map = cx_basis.subs([(x_[i], vertices[dofmap(e,i)][0]) for i in range(4)])
+    y_map = cy_basis.subs([(y_[i], vertices[dofmap(e,i)][1]) for i in range(4)])
+    # Local Jacobian of determinant
+    detJac_loc = Jac.det().subs([(x_[i], vertices[dofmap(e,i)][0])
+                                 for i in range(4)])
+    detJac_loc = detJac_loc.subs([(y_[i], vertices[dofmap(e,i)][1])
+                                  for i in range(4)])
 
     # Use Gauss-Legendre quadrature
     points, weights = special.p_roots(quad_degree)
-
     for i in range(4):
         for c_x in range(len(weights)):
             for c_y in range(len(weights)):
-                B_e[i] += weights[c_x]*weights[c_y]*detDp*(
-                    (f(x,y)*basis[i]).replace("xi", points[c_x]).
-                    replace("eta", points[c_y]))
+                B_e[i] += weights[c_x]*weights[c_y]*detJac_loc*(
+                    (f(x_map,y_map)*basis[i]).subs([("xi", points[c_x]),
+                                                    ("eta", points[c_y])]))
     return B_e
     
 def rhs(f, quad_degree=4):
@@ -146,7 +163,7 @@ def rhs(f, quad_degree=4):
 
 import time;
 start = time.time()
-q_deg = 2
+q_deg = 4
 A= MassMatrix(q_deg)
 stop = time.time()
 print("Mass matrix assembly: {0:.2f}".format(stop-start))
@@ -223,7 +240,8 @@ def J_local(e,coeffs, quad_degree=4):
         for c_x in range(len(weights)):
             for c_y in range(len(weights)):
                 loc +=  weights[c_x]*weights[c_y]*detDp*(
-                    (coeffs[dofmap(e,i)]*basis[i])).replace("xi", points[c_x]).replace("eta", points[c_y])
+                    (coeffs[dofmap(e,i)]*basis[i])).subs([("xi", points[c_x]),
+                                                          ("eta", points[c_y])])
     return loc
     
 def J(u_h,quad_degree=4):
