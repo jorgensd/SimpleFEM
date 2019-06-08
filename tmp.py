@@ -57,7 +57,7 @@ def mesh(nx, ny):
 
 xi = sp.Symbol("xi")
 eta = sp.Symbol("eta")
-Nx, Ny = 25,25
+Nx, Ny = 20,40
 vertices, cells, grid = mesh(Nx, Ny)
 dofmap = lambda e,r : cells[e,r]
 
@@ -163,7 +163,7 @@ def rhs(f, quad_degree=4):
 
 import time;
 start = time.time()
-q_deg = 4
+q_deg = 2
 A= MassMatrix(q_deg)
 stop = time.time()
 print("Mass matrix assembly: {0:.2f}".format(stop-start))
@@ -220,7 +220,11 @@ def plot(vertices, cells, u_h, grid):
     plt.contourf(grid[0],grid[1], u_plot)
     # plt.imshow(u_plot, interpolation="bilinear", aspect="equal", origin="lower")
     for i in range(len(cells)):
-        plt.plot(vertices[cells[i],0], vertices[cells[i], 1], "ko",alpha=0.5)
+        plt.plot(np.append(vertices[cells[i],0],
+                           np.array(vertices[cells[i],0][0])),
+                 np.append(vertices[cells[i], 1],
+                           np.array(vertices[cells[i],1][0])),
+                 "k-",alpha=0.2, linewidth=0.5)
     plt.colorbar()
     plt.axis("equal")
     plt.savefig("result.png")
