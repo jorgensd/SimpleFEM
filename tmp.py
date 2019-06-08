@@ -5,6 +5,8 @@ from IPython import embed
 
 xi = sp.Symbol("xi")
 eta = sp.Symbol("eta")
+p00,p10,p11,p01 = sp.symbols("p00,p10,p11,p01")
+
 basis = [(xi-1)*(eta-1)/4,
          -(xi+1)*(eta-1)/4,
          (xi+1)*(eta+1)/4,
@@ -48,11 +50,11 @@ def mesh(nx, ny):
 
 xi = sp.Symbol("xi")
 eta = sp.Symbol("eta")
-Nx, Ny = 3,3
+Nx, Ny = 10,10
 vertices, cells, grid = mesh(Nx, Ny)
 dofmap = lambda e,r : cells[e,r]
 
-def A_local(e):
+def A_local(e, quad_degree=4):
     A_e = np.zeros((4,4))
     # Global coordinates for an element
     x = sum([vertices[dofmap(e,i)][0]*basis[i] for i in range(4)])
@@ -62,7 +64,7 @@ def A_local(e):
     Jac = sp.Matrix([[x.diff("xi"), x.diff("eta")],
                      [y.diff("xi"), y.diff("eta")]])
 
-    quad_degree = 2
+
     points, weights = special.p_roots(quad_degree)
 
     for i in range(4):
@@ -84,10 +86,12 @@ def A_local(e):
                     #     replace("eta", points[c_y]))
     return A_e
 
-def MassMatrix():
+def MassMatrix(quad_degree=4):
     A = np.zeros((len(vertices),len(vertices)))
+    # All elements are the same
+    A_e = A_local(0, quad_degree)
     for e in range(len(cells)):
-        A_e = A_local(e)
+        #A_e = A_local(e)
         for r in range(4):
             for s in range(4):
                 A[dofmap(e,r), dofmap(e,s)] += A_e[r,s]
@@ -112,7 +116,7 @@ def bc_apply(A, b):
         b[i] = 0
     return A
 
-def b_local(e,f):
+def b_local(e,f, quad_degree=4):
     B_e = np.zeros((4))
     # Global coordinates for an element
     x = sum([vertices[dofmap(e,i)][0]*basis[i] for i in range(4)])
@@ -120,38 +124,43 @@ def b_local(e,f):
     detDp = np.abs(x.diff("xi")*y.diff("eta")
                 -x.diff("eta")*y.diff("xi"))
 
-    quad_degree = 3
+    # Use Gauss-Legendre quadrature
     points, weights = special.p_roots(quad_degree)
 
     for i in range(4):
-        phi_i = basis[i]
         for c_x in range(len(weights)):
             for c_y in range(len(weights)):
                 B_e[i] += weights[c_x]*weights[c_y]*detDp*(
-                    (f(x,y)*phi_i).replace("xi", points[c_x]).
+                    (f(x,y)*basis[i]).replace("xi", points[c_x]).
                     replace("eta", points[c_y]))
     return B_e
     
-def rhs(f):
+def rhs(f, quad_degree=4):
     B = np.zeros(len(vertices))
     for e in range(len(cells)):
-        B_e = b_local(e,f)
+        B_e = b_local(e,f, quad_degree)
         for r in range(4):
             B[dofmap(e,r)] += B_e[r]
     return B
 
 
-    
-A= MassMatrix()
+import time;
+start = time.time()
+q_deg = 2
+A= MassMatrix(q_deg)
+stop = time.time()
+print("Mass matrix assembly: {0:.2f}".format(stop-start))
 f = lambda x,y: 4*(-y**2+y)*sp.sin(sp.pi*x)
-L = rhs(f)
-
+start = time.time()
+L = rhs(f,q_deg)
+stop = time.time()
+print("RHS assembly: {0:.2f}".format(stop-start))
 bc_apply(A, L)
 u_h = np.linalg.solve(A, L)
 
 
 print("my solution")
-print(u_h)
+#print(u_h)
 import matplotlib.pyplot as plt
 import matplotlib.collections as mplc
 from sympy.plotting import plot3d
@@ -193,39 +202,37 @@ def plot(vertices, cells, u_h, grid):
     u_plot = u_h.reshape(grid[0].shape)
     plt.contourf(grid[0],grid[1], u_plot)
     # plt.imshow(u_plot, interpolation="bilinear", aspect="equal", origin="lower")
-    embed()
     for i in range(len(cells)):
-        print(cells[i])
-        plt.plot(vertices[cells[i],0], vertices[cells[i], 1], "ro")       
+        plt.plot(vertices[cells[i],0], vertices[cells[i], 1], "ko",alpha=0.5)
+    plt.colorbar()
+    plt.axis("equal")
     plt.savefig("result.png")
 
 plot(vertices, cells, u_h,grid)
 
-def J_local(e,coeffs):
+def J_local(e,coeffs, quad_degree=4):
     # Global coordinates for an element
     x = sum([vertices[dofmap(e,i)][0]*basis[i] for i in range(4)])
     y = sum([vertices[dofmap(e,i)][1]*basis[i] for i in range(4)])
     detDp = np.abs(x.diff("xi")*y.diff("eta")
                 -x.diff("eta")*y.diff("xi"))
 
-    quad_degree = 3
     points, weights = special.p_roots(quad_degree)
     loc = 0
     for i in range(4):
         for c_x in range(len(weights)):
             for c_y in range(len(weights)):
                 loc +=  weights[c_x]*weights[c_y]*detDp*(
-                    coeffs[dofmap(e,i)]*basis[i].replace("xi", points[c_x]).
-                    replace("eta", points[c_y]))
+                    (coeffs[dofmap(e,i)]*basis[i])).replace("xi", points[c_x]).replace("eta", points[c_y])
     return loc
     
-def J(u_h):
+def J(u_h,quad_degree=4):
     value = 0
     for e in range(len(cells)):
-        value += J_local(e,u_h)
+        value += J_local(e,u_h,quad_degree)
     return value
 
-print(J(u_h))
+print(J(u_h, 2))
 import matplotlib.pyplot as plt
 
 
