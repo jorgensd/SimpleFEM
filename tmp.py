@@ -40,14 +40,13 @@ def mesh(nx, ny):
             v2 = v0 + nx+1
             v3 = v1 + nx+1
             cells[cell,:] = v0, v1, v3, v2;  cell += 1
-
+    
     return vertices, cells
 
 xi = sp.Symbol("xi")
 eta = sp.Symbol("eta")
-
-grad_basis = [[sp.diff(basis[i], xi), sp.diff(basis[i], eta)] for i in range(4)]
-vertices, cells = mesh(1,1)
+Nx, Ny = 5,4
+vertices, cells = mesh(Nx, Ny)
 dofmap = lambda e,r : cells[e,r]
 
 def A_local(e):
@@ -86,18 +85,97 @@ def A_local(e):
                         replace("eta", points[c_y]))[0,0]
 
                     #Mass matrix
-                    # A_e[i,j] += weights[c_x]*weights[c_y]*DetDp*(
+                    # A_e[i,j] += weights[c_x]*weights[c_y]*detDp*(
                     #     (phi_i*phi_j).replace("xi", points[c_x]).
                     #     replace("eta", points[c_y]))
     return A_e
 
-def A():
+def MassMatrix():
     A = np.zeros((len(vertices),len(vertices)))
     for e in range(len(cells)):
         A_e = A_local(e)
         for r in range(4):
             for s in range(4):
                 A[dofmap(e,r), dofmap(e,s)] += A_e[r,s]
-    print(A)
-    embed()
-A()
+    return A
+
+def on_boundary():
+    # Condition
+    b_dofs = []
+    cond = lambda x: (np.isclose(x[0],0) or np.isclose(x[1],0)
+                        or np.isclose(x[0],1) or np.isclose(x[1],1))
+    for i in range(len(vertices)):
+        if cond(vertices[i]):
+            b_dofs.append(i)
+    return b_dofs
+
+def bc_apply(A, b):
+    b_dofs = on_boundary()
+    for i in b_dofs:
+        A[i,:i] = 0
+        A[i,i+1:] =0
+        A[i,i] = 1
+        b[i] = 0
+    return A
+
+def b_local(e,f):
+    B_e = np.zeros((4))
+    # Global coordinates for an element
+    x = sum([vertices[dofmap(e,i)][0]*basis[i] for i in range(4)])
+    y = sum([vertices[dofmap(e,i)][1]*basis[i] for i in range(4)])
+    detDp = np.abs(x.diff("xi")*y.diff("eta")
+                -x.diff("eta")*y.diff("xi"))
+
+    quad_degree = 3
+    points, weights = special.p_roots(quad_degree)
+
+    for i in range(4):
+        phi_i = basis[i]
+        for c_x in range(len(weights)):
+            for c_y in range(len(weights)):
+
+                #Mass matrix
+                B_e[i] += weights[c_x]*weights[c_y]*detDp*(
+                    (f(x,y)*phi_i).replace("xi", points[c_x]).
+                    replace("eta", points[c_y]))
+    return B_e
+    
+def rhs(f):
+    B = np.zeros(len(vertices))
+    for e in range(len(cells)):
+        B_e = b_local(e,f)
+        for r in range(4):
+            B[dofmap(e,r)] += B_e[r]
+    return B
+
+
+
+A= MassMatrix()
+f = lambda x,y: 4*(-y**2+y)*sp.sin(sp.pi*x)
+L = rhs(f)
+
+bc_apply(A, L)
+u_h = np.linalg.solve(A, L)
+print("my solution")
+print(u_h)
+
+
+# Reference
+
+from dolfin import *
+mesh = UnitSquareMesh.create(Nx,Ny, CellType.Type.quadrilateral)
+V = FunctionSpace(mesh, "CG", 1)
+u, v= TrialFunction(V), TestFunction(V)
+a = inner(grad(u), grad(v))*dx
+#a = inner(u,v)*dx
+A = assemble(a)
+x = SpatialCoordinate(mesh)
+f = 4*(-x[1]**2+x[1])*sin(pi*x[0])
+l = inner(f, v)*dx
+B = assemble(l)
+bc = DirichletBC(V, 0, "on_boundary")
+bc.apply(A, B)
+u_h = Function(V)
+solve(A, u_h.vector(), B)
+print("reference")
+print(u_h.vector().get_local())
