@@ -24,10 +24,10 @@ grads = [sp.Matrix([[sp.diff(basis[i], "xi")],
 
 def mesh(nx, ny):
     """
-    Return a 2D finite element mesh on a rectangle with
-    extend x and y in the x and y directions.
+    Return a 2D UnitSquareMesh with quadrilateral with 
     nx and ny are the divisions in the x and y directions.
-    Return vertices and cells (local to global vertex number mapping).
+    Return vertices,cells (local to global vertex number mapping)
+    and grid-structure for plotting
     """
     x = np.linspace(0, 1, nx+1)
     y = np.linspace(0, 1, ny+1)
@@ -41,9 +41,7 @@ def mesh(nx, ny):
             vertices[vertex,:] = x[ix], y[iy]
             vertex += 1
 
-
     cell = 0
-    # Quadrilateral elements
     for iy in range(ny):
         for ix in range(nx):
             v0 = iy*(nx + 1) + ix
@@ -51,17 +49,12 @@ def mesh(nx, ny):
             v2 = v0 + nx+1
             v3 = v1 + nx+1
             cells[cell,:] = v0, v1, v3, v2;  cell += 1
-    X, Y = np.meshgrid(x, y)
-    grid = (X, Y)
+    grid = np.meshgrid(x, y)
     return vertices, cells, grid
 
-xi = sp.Symbol("xi")
-eta = sp.Symbol("eta")
-Nx, Ny = 20,40
+Nx, Ny = 70,100
 vertices, cells, grid = mesh(Nx, Ny)
 dofmap = lambda e,r : cells[e,r]
-
-
 
 def A_local(e, quad_degree=4):
     A_e = np.zeros((4,4))
