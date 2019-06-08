@@ -6,9 +6,11 @@ from IPython import embed
 xi = sp.Symbol("xi")
 eta = sp.Symbol("eta")
 basis = [(xi-1)*(eta-1)/4,
-                   -(xi+1)*(eta-1)/4,
-                   (xi+1)*(eta+1)/4,
-                   -(xi-1)*(eta+1)/4]
+         -(xi+1)*(eta-1)/4,
+         (xi+1)*(eta+1)/4,
+         -(xi-1)*(eta+1)/4]
+grads = [sp.Matrix([[sp.diff(basis[i], "xi")],
+                    [sp.diff(basis[i], "eta")]]) for i in range(4)]
 
 
 def mesh(nx, ny):
@@ -45,7 +47,7 @@ def mesh(nx, ny):
 
 xi = sp.Symbol("xi")
 eta = sp.Symbol("eta")
-Nx, Ny = 5,4
+Nx, Ny = 3,4
 vertices, cells = mesh(Nx, Ny)
 dofmap = lambda e,r : cells[e,r]
 
@@ -56,32 +58,23 @@ def A_local(e):
     y = sum([vertices[dofmap(e,i)][1]*basis[i] for i in range(4)])
     detDp = np.abs(x.diff("xi")*y.diff("eta")
                 -x.diff("eta")*y.diff("xi"))
+    Jac = sp.Matrix([[x.diff("xi"), x.diff("eta")],
+                     [y.diff("xi"), y.diff("eta")]])
 
     quad_degree = 2
     points, weights = special.p_roots(quad_degree)
 
     for i in range(4):
         for j in range(4):
-            dphi_i = sp.Matrix([[sp.diff(basis[i], "xi"),
-                              sp.diff(basis[i], "eta")]])
-            dphi_j = sp.Transpose(sp.Matrix([[sp.diff(basis[j], "xi"),
-                                        sp.diff(basis[j], "eta")]]))
             phi_i = basis[i]
             phi_j = basis[j]
-
-            grad_i = sp.Matrix([[sp.diff(basis[i], "xi")],
-                                [sp.diff(basis[i], "eta")]])
-            grad_j = sp.Matrix([[sp.diff(basis[j], "xi")],
-                                [sp.diff(basis[j], "eta")]])
-            Jac = sp.Matrix([[x.diff("xi"), x.diff("eta")],
-                             [y.diff("xi"), y.diff("eta")]])
             for c_x in range(len(weights)):
                 for c_y in range(len(weights)):
                     # Stiffness Matrix
                     Jac_loc = Jac.replace("xi", points[c_x]).replace("eta", points[c_y])
 
                     A_e[i,j] += weights[c_x]*weights[c_y]*detDp*(
-                        (sp.transpose(Jac_loc.inv()*grad_j)*Jac_loc.inv()*grad_i).replace("xi", points[c_x]).
+                        (sp.transpose(Jac_loc.inv()*grads[j])*Jac_loc.inv()*grads[i]).replace("xi", points[c_x]).
                         replace("eta", points[c_y]))[0,0]
 
                     #Mass matrix
@@ -157,10 +150,7 @@ u_h = np.linalg.solve(A, L)
 
 
 print("my solution")
-#print(u_h)
-
-
-# Reference
+print(u_h)
 
 def J_local(e,coeffs):
     # Global coordinates for an element
@@ -187,22 +177,32 @@ def J(u_h):
     return value
 
 print(J(u_h))
+import matplotlib.pyplot as plt
+
+embed()
+showMeshPlot(vertices, cells, u_h)
+
+embed()
 
 from dolfin import *
-mesh = UnitSquareMesh.create(Nx,Ny, CellType.Type.quadrilateral)
-V = FunctionSpace(mesh, "CG", 1)
-u, v= TrialFunction(V), TestFunction(V)
-a = inner(grad(u), grad(v))*dx
-#a = inner(u,v)*dx
-A = assemble(a)
-x = SpatialCoordinate(mesh)
-f = 4*(-x[1]**2+x[1])*sin(pi*x[0])
-l = inner(f, v)*dx
-B = assemble(l)
-bc = DirichletBC(V, 0, "on_boundary")
-bc.apply(A, B)
-u_h = Function(V)
-solve(A, u_h.vector(), B)
-print("reference")
-#print(u_h.vector().get_local())
-print(assemble(u_h*dx))
+def dolfin_comparasion():
+    mesh = UnitSquareMesh.create(Nx,Ny, CellType.Type.quadrilateral)
+    V = FunctionSpace(mesh, "CG", 1)
+    u, v= TrialFunction(V), TestFunction(V)
+    a = inner(grad(u), grad(v))*dx
+    #a = inner(u,v)*dx
+    A_dol = assemble(a)
+    x = SpatialCoordinate(mesh)
+    f = 4*(-x[1]**2+x[1])*sin(pi*x[0])
+    l = inner(f, v)*dx
+    B_dol = assemble(l)
+    bc = DirichletBC(V, 0, "on_boundary")
+    bc.apply(A_dol, B_dol)
+    u_h = Function(V)
+    solve(A_dol, u_h.vector(), B_dol)
+    print("reference")
+    #print(u_h.vector().get_local())
+    print(assemble(u_h*dx))
+    File("u_h.pvd") << u_h
+
+dolfin_comparasion()
