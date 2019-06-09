@@ -9,18 +9,16 @@ basis = [(xi-1)*(eta-1)/4,
          -(xi+1)*(eta-1)/4,
          (xi+1)*(eta+1)/4,
          -(xi-1)*(eta+1)/4]
-x00,x10,x11,x01 = sp.symbols("x00,x10,x11,x01")
-y00,y10,y11,y01 = sp.symbols("y00,y10,y11,y01")
-x_ = [x00,x10,x11,x01]
-y_ = [y00,y10,y11,y01]
+x_ = sp.symbols("x00,x10,x11,x01")
+y_ = sp.symbols("y00,y10,y11,y01")
 cx_basis = sum([x_[i]*basis[i] for i in range(4)])
 cy_basis = sum([y_[i]*basis[i] for i in range(4)])
 Jac = sp.Matrix([[cx_basis.diff(xi), cx_basis.diff(eta)],
                  [cy_basis.diff(xi), cy_basis.diff(eta)]])
 
-grads = [sp.Matrix([[sp.diff(basis[i], "xi")],
-                    [sp.diff(basis[i], "eta")]]) for i in range(4)]
-
+grads = [sp.Matrix([[sp.diff(basis[i], xi)],
+                    [sp.diff(basis[i], eta)]]) for i in range(4)]
+embed()
 
 def mesh(nx, ny):
     """
@@ -52,7 +50,7 @@ def mesh(nx, ny):
     grid = np.meshgrid(x, y)
     return vertices, cells, grid
 
-Nx, Ny = 70,100
+Nx, Ny = 2,2
 vertices, cells, grid = mesh(Nx, Ny)
 dofmap = lambda e,r : cells[e,r]
 
@@ -97,6 +95,7 @@ def MassMatrix(quad_degree=4):
     A = np.zeros((len(vertices),len(vertices)))
     # All elements are the same
     A_e = A_local(0, quad_degree)
+    print(A_e)
     for e in range(len(cells)):
         #A_e = A_local(e)
         for r in range(4):
@@ -174,8 +173,6 @@ print("my solution")
 import matplotlib.pyplot as plt
 import matplotlib.collections as mplc
 from sympy.plotting import plot3d
-x_ , y_ = sp.symbols("x y")
-
 
 # def plot(vertices, cells, u_h):
 #     cell_vertex_coordinates = []
@@ -208,22 +205,66 @@ x_ , y_ = sp.symbols("x y")
 #     plot3d(*tup)
 #     plt.savefig("fullpicture.png")
 
-def plot(vertices, cells, u_h, grid):
-    u_plot = u_h.reshape(grid[0].shape)
-    plt.contourf(grid[0],grid[1], u_plot)
-    # plt.imshow(u_plot, interpolation="bilinear", aspect="equal", origin="lower")
+# def plot(vertices, cells, u_h, grid):
+#     u_plot = u_h.reshape(grid[0].shape)
+#     # plt.imshow(u_plot, interpolation="bilinear", aspect="equal", origin="lower")
+#     plt.plot_surface(grid[0], grid[1], u_h)
+#     #plt.contourf(grid[0],grid[1], u_plot)
+#     # for i in range(len(cells)):
+#     #     plt.plot(np.append(vertices[cells[i],0],
+#     #                        np.array(vertices[cells[i],0][0])),
+#     #              np.append(vertices[cells[i], 1],
+#     #                        np.array(vertices[cells[i],1][0])),
+#     #              "k-",alpha=0.2, linewidth=0.5)
+#     plt.colorbar()
+#     plt.axis("equal")
+#     plt.savefig("result.png")
+#plot(vertices, cells, u_h,grid)
+
+
+def plot_sympy(vertices, cells, u_h,grid):
+    from mpl_toolkits.mplot3d import axes3d
+    n_loc_x = 5
+    n_loc_y = 5
+    glob_x = np.linspace(0,1, grid[0].shape[0]
+                         + (grid[0].shape[0]-1)*(n_loc_x-2))
+    glob_y = np.linspace(0,1, grid[0].shape[1]
+                         + (grid[0].shape[1]-1)*(n_loc_y-2))
     for i in range(len(cells)):
-        plt.plot(np.append(vertices[cells[i],0],
-                           np.array(vertices[cells[i],0][0])),
-                 np.append(vertices[cells[i], 1],
-                           np.array(vertices[cells[i],1][0])),
-                 "k-",alpha=0.2, linewidth=0.5)
-    plt.colorbar()
-    plt.axis("equal")
-    plt.savefig("result.png")
 
-plot(vertices, cells, u_h,grid)
+        x = np.linspace(-1,1,n_loc_x)
+        y = np.linspace(-1,1,n_loc_y)
+        m_x,m_y = np.meshgrid(x,y)
+        u_h_loc = sum(u_h[cells[i][j]]*basis[j] for j in range(4))
+        f = sp.lambdify((xi, eta), u_h_loc)
+        f_loc = f(m_x,m_y)
+        x_map = cx_basis.subs([(x_[j], vertices[dofmap(i,j)][0]) for j in range(4)])
+        y_map = cy_basis.subs([(y_[j], vertices[dofmap(i,j)][1]) for j in range(4)])
+        m_x_glob = np.zeros(m_x.shape)
+        m_y_glob = np.zeros(m_y.shape)
+        for j in range(n_loc_x):
+            for k in range(n_loc_y):
+                m_x_glob[j,k] = x_map.subs([(xi,m_x[j,k]),(eta,m_y[j,k])])
+                m_y_glob[j,k] = y_map.subs([(xi,m_x[j,k]),(eta,m_y[j,k])])
+        fig = plt.figure()
+        axes = fig.add_subplot(1,1,1, projection="3d")
+        surface = axes.plot_surface(m_x_glob, m_y_glob, f_loc)
+        axes.plot_wireframe(m_x_glob, m_y_glob, f_loc)
+    plt.savefig("first_cell.png")
 
+
+plot_sympy(vertices, cells, u_h,grid)
+def plot(u_h, grid):
+    from mpl_toolkits.mplot3d import axes3d
+    fig = plt.figure()
+    axes = fig.add_subplot(1,1,1, projection="3d")
+    u_plot = u_h.reshape(grid[0].shape)
+    mycmap = plt.get_cmap('viridis')
+    surface = axes.plot_surface(grid[0], grid[1], u_plot,cmap=mycmap)
+    fig.colorbar(surface,ax=axes)
+    plt.savefig("u_h.png")
+plot(u_h, grid)
+    
 def J_local(e,coeffs, quad_degree=4):
     # Global coordinates for an element
     x = sum([vertices[dofmap(e,i)][0]*basis[i] for i in range(4)])
