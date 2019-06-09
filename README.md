@@ -26,11 +26,12 @@ docker run --rm -ti -v $(pwd):/home/fenics/shared/ -w /home/fenics/shared/ quay.
 
 ## Results
 Running `problem.py` produces the following figures:
-**Solution of the Poisson equation on a 25&#215;10 grid with f=4(-y<sup>2</sup>+y) sin(&#960; x)**
+
+- **Solution of the Poisson equation on a 25&#215;10 grid with f=4(-y<sup>2</sup>+y) sin(&#960; x)**
 ![Solution of the Poisson equation visualized](Figures/u_h.png)
 
-**Visualization of the solution from a 25&#215;10 with the exact values on a 40&#215;40 grid.**
+- **Visualization of the solution from a 25&#215;10 with the exact values on a 40&#215;40 grid.**
 ![Custom mesh visualization](Figures/u_h_custom.png)
 
-**Contour-plot of the solution from a 25&#215;10 grid.**
+- **Contour-plot of the solution from a 25&#215;10 grid.**
 ![Custom mesh visualization](Figures/u_h_contour.png)
