@@ -13,14 +13,15 @@ class FunctionSpace():
                        -(xi+1)*(eta-1)/4,
                        (xi+1)*(eta+1)/4,
                        -(xi-1)*(eta+1)/4])
+    N_loc = 4
     # Global coordinate as function of reference parameterization
     c_basis = sp.Matrix([0, 0])
-    for i in range(4):
+    for i in range(N_loc):
         c_basis[0] += x_[i] * basis[i]
         c_basis[1] += y_[i] * basis[i]
     Jac = c_basis.jacobian([xi, eta])
     grads = []
-    for i in range(4):
+    for i in range(N_loc):
         grads.append(sp.Matrix([[sp.diff(basis[i], xi)],
                                 [sp.diff(basis[i], eta)]]))
 

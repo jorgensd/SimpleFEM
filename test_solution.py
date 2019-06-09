@@ -6,10 +6,11 @@ import pytest
 import numpy as np
 
 
-@pytest.mark.parametrize("Nx", [8, 20])
-@pytest.mark.parametrize("Ny", [8, 15])
+@pytest.mark.parametrize("Nx", [8, 20, 40])
+@pytest.mark.parametrize("Ny", [8, 15, 33])
 @pytest.mark.parametrize("f", ["4*(-y**2+y)*sin(pi*x)",
-                               "8*pi**2*sin(2*pi*x)*sin(2*pi*y)"])
+                               "8*pi**2*sin(2*pi*x)*sin(2*pi*y)",
+                               "x**2+cos(2*pi*y)"])
 def test(Nx, Ny, f):
     def f_internal(x, y):
         from sympy import pi, sin, cos

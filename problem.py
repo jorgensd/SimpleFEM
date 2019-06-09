@@ -29,6 +29,7 @@ def main(nx, ny, f, quad_degree=4):
 if __name__ == "__main__":
     f = "4*(-y**2+y)*sin(pi*x)"
     # f = "8*pi**2*sin(2*pi*x)*sin(2*pi*y)"
+    # f = "x**2+cos(2*pi*y)"
 
     def f_internal(x, y):
         from sympy import pi, sin, cos

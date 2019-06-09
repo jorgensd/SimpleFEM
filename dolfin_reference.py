@@ -2,7 +2,7 @@ def dolfin_comparasion(Nx, Ny, f):
     from dolfin import (UnitSquareMesh, FunctionSpace, TrialFunction,
                         TestFunction, assemble, inner, grad, dx,
                         SpatialCoordinate, DirichletBC, Function, solve,
-                        pi, CellType, sin)
+                        pi, CellType, sin, cos)
     mesh = UnitSquareMesh.create(Nx, Ny, CellType.Type.quadrilateral)
     V = FunctionSpace(mesh, "CG", 1)
     u, v = TrialFunction(V), TestFunction(V)
