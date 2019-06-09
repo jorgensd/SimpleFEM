@@ -25,12 +25,15 @@ def main(nx, ny, f):
 
     u_h = np.linalg.solve(A, L)
 
-    return u_h, float(assemble_volume_function(u_h, V))
+    return (u_h,V), float(assemble_volume_function(u_h, V))
 
 
 if __name__ == "__main__":
     f = "4*(-y**2+y)*sin(pi*x)"
+    #f = "8*pi**2*sin(2*pi*x)*sin(2*pi*y)"
     def f_internal(x, y):
-        from sympy import pi, sin
+        from sympy import pi, sin,cos
         return eval(f)
-    print(main(10, 10)[1])
+    (u_h, V), intu = main(25,25, f_internal)
+    from plotting import plot
+    plot(u_h, V)
