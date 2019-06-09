@@ -12,3 +12,5 @@ first order Lagrange elements on quadrilaterals, corresponding to having dofs at
 - problem.py: Contains the example where f=4(-y<sup>2</sup>+y) sin(&#960; x).
 - test_solution.py: Compares &#8747; u dx obtained with this finite element solver a FEniCS implementation.
 - plotting.py: Contains several plotting routines for visualising the solution.
+
+![Solution of the Poisson equation visualized](u_h.png)
