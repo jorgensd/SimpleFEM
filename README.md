@@ -1,9 +1,10 @@
 # SimpleFEM
 This repository contains a Finite Element Solver for the Poisson equation - &Delta; u = f on &Omega; = [0,1]&#215;[0,1],
 a unit square consisting of N<sub>x</sub> elements in the x direction, N<sub>y</sub> elements in the y-direction.
+The elements are four-noded quadrilateral elements.
 
 ## Structure:
-To run the example, do `python3 problem.py`.
+To run the example: `python3 problem.py`.
 
 Following is a list describing the contents of each file:
 - **assembly.py**: Contains assembly routines for the Stiffness matrix, the right hand side and integration of a single finite 
