@@ -1,4 +1,6 @@
 import numpy as np
+
+
 class UnitSquareMesh():
     def __init__(self, nx, ny):
         """
@@ -13,9 +15,9 @@ class UnitSquareMesh():
         cells = np.zeros((nx*ny, 4), dtype=np.int)
 
         vertex = 0
-        for iy in range(ny+1):
-            for ix in range(nx+1):
-                vertices[vertex,:] = x[ix], y[iy]
+        for iy in range(ny + 1):
+            for ix in range(nx + 1):
+                vertices[vertex, :] = x[ix], y[iy]
                 vertex += 1
 
         cell = 0
@@ -25,7 +27,8 @@ class UnitSquareMesh():
                 v1 = v0 + 1
                 v2 = v0 + nx+1
                 v3 = v1 + nx+1
-                cells[cell,:] = v0, v1, v3, v2;  cell += 1
+                cells[cell, :] = v0, v1, v3, v2
+                cell += 1
 
         self.cells = cells
         self.vertices = vertices
@@ -33,5 +36,5 @@ class UnitSquareMesh():
 
     def on_boundary(self, x):
         """ Checking if a coordinate is on the boundary of the mesh """
-        return  (np.isclose(x[0],0) or np.isclose(x[1],0)
-                 or np.isclose(x[0],1) or np.isclose(x[1],1))
+        return (np.isclose(x[0], 0) or np.isclose(x[1], 0)
+                or np.isclose(x[0], 1) or np.isclose(x[1], 1))
