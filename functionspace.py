@@ -34,3 +34,15 @@ class FunctionSpace():
         the same the local to global vertex number mapping of the mesh
         """
         return self._dofmap
+
+    def on_boundary(self):
+        """
+        Returns a list of global numbering of all dofs on the boundary 
+        """
+        b_dofs = []
+        for i in range(len(self.mesh.vertices)):
+            # For another FiniteElement, one would have to
+            # keep a separate dof-map from the mesh
+            if self.mesh.on_boundary(self.mesh.vertices[i]):
+                b_dofs.append(i)
+        return b_dofs

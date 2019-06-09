@@ -98,3 +98,42 @@ def source_local(V, e, f, quad_degree=4):
                     (f(x_map,y_map)*V.basis[i]).subs([("xi", points[c_x]),
                                                     ("eta", points[c_y])]))
     return B_e
+
+
+def volume_local(V,e,coeffs, quad_degree=4):
+    dofmap = V.dofmap()
+    # Global coordinates for an element
+    x_map = V.c_basis[0].subs([(V.x_[i], V.mesh.vertices[dofmap(e,i)][0])
+                             for i in range(4)])
+    y_map = V.c_basis[1].subs([(V.y_[i], V.mesh.vertices[dofmap(e,i)][1])
+                             for i in range(4)])
+    
+    # Local Jacobian of determinant
+    detJac_loc = V.Jac.det().subs([(V.x_[i], V.mesh.vertices[dofmap(e,i)][0])
+                                 for i in range(4)])
+    detJac_loc = detJac_loc.subs([(V.y_[i], V.mesh.vertices[dofmap(e,i)][1])
+                                  for i in range(4)])
+  
+    points, weights = special.p_roots(quad_degree)
+    loc = 0
+    for i in range(4):
+        for c_x in range(len(weights)):
+            for c_y in range(len(weights)):
+                loc +=  weights[c_x]*weights[c_y]*\
+                (detJac_loc*((coeffs[dofmap(e,i)]*V.basis[i]))
+                 .subs([("xi", points[c_x]),("eta", points[c_y])]))
+    return loc
+    
+
+def assemble_volume_function(u_h,V,quad_degree=4):
+    """
+    Assembles u_h*dx using Gauss-legendre quadrature rules
+    Input:
+        u_h: list containing the coefficient values for the
+        finite element function.
+        V: The finite element function space
+    """
+    value = 0
+    for e in range(len(V.mesh.cells)):
+        value += volume_local(V,e,u_h,quad_degree)
+    return value

@@ -30,3 +30,8 @@ class UnitSquareMesh():
         self.cells = cells
         self.vertices = vertices
         self.grid = grid
+
+    def on_boundary(self, x):
+        """ Checking if a coordinate is on the boundary of the mesh """
+        return  (np.isclose(x[0],0) or np.isclose(x[1],0)
+                 or np.isclose(x[0],1) or np.isclose(x[1],1))
