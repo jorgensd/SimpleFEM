@@ -1,5 +1,7 @@
 from problem import main
 from dolfin_reference import dolfin_comparasion
+from assembly import assemble_volume_function
+
 import pytest
 import numpy as np
 
@@ -12,7 +14,8 @@ def test(Nx, Ny, f):
     def f_internal(x, y):
         from sympy import pi, sin, cos
         return eval(f)
-    u_h, u_int = main(Nx, Ny, f_internal)
-    u_hd, u_dolfin = dolfin_comparasion(Nx, Ny,f)
-    print(u_int, u_dolfin)
-    assert(np.isclose(u_int, u_dolfin, rtol=1e-8))
+    u_h, V = main(Nx, Ny, f_internal)
+    integral_u = assemble_volume_function(u_h, V, quad_degree=4)
+    u_hd, u_dolfin = dolfin_comparasion(Nx, Ny, f)
+    print(integral_u, u_dolfin)
+    assert(np.isclose(float(integral_u), u_dolfin, rtol=1e-8))
