@@ -13,6 +13,15 @@ first order Lagrange elements on quadrilaterals, corresponding to having dofs at
 - test_solution.py: Compares &#8747; u dx obtained with this finite element solver a FEniCS implementation.
 - plotting.py: Contains several plotting routines for visualising the solution.
 
+## Dependencies
+This finite element solver uses the numpy, sympy, scipy and matplotlib library.
+To run the comparasion of results with dolfin, you can use the FEniCS docker image, running
+```
+docker run --rm -ti -v $(pwd):/home/fenics/shared/ -w /home/fenics/shared/ quay.io/fenicsproject/stable:latest
+```
+
+## Results
+
 ### Solution of the Poisson equation on a 25&#215;10 grid with f=4(-y<sup>2</sup>+y) sin(&#960; x)
 ![Solution of the Poisson equation visualized](u_h.png)
 
