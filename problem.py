@@ -39,4 +39,4 @@ if __name__ == "__main__":
     from plotting import plot_at_vertex, plot_custom, plot_contour
     plot_at_vertex(u_h, V)
     plot_custom(u_h, V, 40)
-    plot_contour(u_h, V, mesh=True)
+    plot_contour(u_h, V)

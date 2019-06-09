@@ -79,24 +79,17 @@ def element(x_, y_, V, last_element=0):
             return i
 
 
-def plot_contour(u_h, V, mesh=False):
+def plot_contour(u_h, V):
     """
     2D contour plot of solution u_h.
-    Optionally overlay the mesh
     """
 
     u_plot = u_h.reshape(V.mesh.grid[0].shape)
-    plt.figure()
+    fig = plt.figure()
+    axes = fig.add_subplot(1, 1, 1)
     plt.contourf(V.mesh.grid[0], V.mesh.grid[1], u_plot)
-    if mesh:
-        vertices = V.mesh.vertices
-        cells = V.mesh.cells
-        for i in range(len(cells)):
-            plt.plot(np.append(vertices[cells[i], 0],
-                               np.array(vertices[cells[i], 0][0])),
-                     np.append(vertices[cells[i], 1],
-                               np.array(vertices[cells[i], 1][0])),
-                     "k-", alpha=0.2, linewidth=0.5)
+    axes.plot(V.mesh.grid[0], V.mesh.grid[1], 'k-', lw=0.5, alpha=0.5)
+    axes.plot(V.mesh.grid[0].T, V.mesh.grid[1].T, 'k-', lw=0.5, alpha=0.5)
 
     cbar = plt.colorbar()
     cbar.set_label("$u_h$", fontsize=20)
