@@ -30,10 +30,14 @@ def main(nx, ny, f):
 
 if __name__ == "__main__":
     f = "4*(-y**2+y)*sin(pi*x)"
-    #f = "8*pi**2*sin(2*pi*x)*sin(2*pi*y)"
+    # f = "8*pi**2*sin(2*pi*x)*sin(2*pi*y)"
+
     def f_internal(x, y):
         from sympy import pi, sin,cos
         return eval(f)
-    (u_h, V), intu = main(25,25, f_internal)
-    from plotting import plot
-    plot(u_h, V)
+    
+    # (u_h, V), intu = main(100,50, f_internal)
+    (u_h, V), intu = main(5,8, f_internal)
+    from plotting import plot_at_vertex, plot_custom
+    plot_at_vertex(u_h, V)
+    plot_custom(u_h, V,15)

@@ -6,10 +6,11 @@ import numpy as np
 
 @pytest.mark.parametrize("Nx", [8, 20])
 @pytest.mark.parametrize("Ny", [8, 15])
-def test(Nx, Ny):
-    f = "4*(-y**2+y)*sin(pi*x)"
+@pytest.mark.parametrize("f", ["4*(-y**2+y)*sin(pi*x)",
+                               "8*pi**2*sin(2*pi*x)*sin(2*pi*y)"])
+def test(Nx, Ny, f):
     def f_internal(x, y):
-        from sympy import pi, sin
+        from sympy import pi, sin, cos
         return eval(f)
     u_h, u_int = main(Nx, Ny, f_internal)
     u_hd, u_dolfin = dolfin_comparasion(Nx, Ny,f)
