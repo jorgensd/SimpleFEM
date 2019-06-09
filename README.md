@@ -13,4 +13,11 @@ first order Lagrange elements on quadrilaterals, corresponding to having dofs at
 - test_solution.py: Compares &#8747; u dx obtained with this finite element solver a FEniCS implementation.
 - plotting.py: Contains several plotting routines for visualising the solution.
 
+### Solution of the Poisson equation on a 25&#215;10 grid with f=4(-y<sup>2</sup>+y) sin(&#960; x)
 ![Solution of the Poisson equation visualized](u_h.png)
+
+### Visualization of the solution from a 25&#215;10 with the exact values on a 40&#215;40 grid.
+![Custom mesh visualization](u_h_custom.png)
+
+### Contour-plot of the solution from a 25&#215;10 grid.
+![Custom mesh visualization](u_h_contour.png)
