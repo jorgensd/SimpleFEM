@@ -15,7 +15,7 @@ first order Lagrange elements on quadrilaterals, corresponding to having dofs at
 - **mesh.py**: Contains the implementation of the UnitSquareMesh
 - **plotting.py**: Contains several plotting routines for visualising the solution.
 - **problem.py**: Contains the example where f=4(-y<sup>2</sup>+y) sin(&#960; x).
-- **test_solution.py**: Compares &#8747; u dx obtained with this finite element solver with a FEniCS implementation.
+- **test_solution.py**: Compares &#8747; u dx obtained with this finite element solver with a FEniCS implementation. This is done for meshes of different sizes and different source terms. Runtime: &#126; 3 minutes.
 
 
 ## Dependencies
