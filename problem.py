@@ -1,4 +1,4 @@
-def main(nx, ny):
+def main(nx, ny, f):
     from mesh import UnitSquareMesh
     from functionspace import FunctionSpace
     from assembly import (assemble_stiffness_matrix, assemble_rhs,
@@ -9,9 +9,6 @@ def main(nx, ny):
     V = FunctionSpace(mesh)
 
     A = assemble_stiffness_matrix(V)
-
-    def f(x, y):
-        return 4*(-y**2 + y) * sp.sin(sp.pi * x)
 
     L = assemble_rhs(V, f)
 
@@ -32,4 +29,8 @@ def main(nx, ny):
 
 
 if __name__ == "__main__":
+    f = "4*(-y**2+y)*sin(pi*x)"
+    def f_internal(x, y):
+        from sympy import pi, sin
+        return eval(f)
     print(main(10, 10)[1])
