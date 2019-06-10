@@ -3,22 +3,35 @@ import numpy as np
 from mpl_toolkits.mplot3d import axes3d
 
 
-def plot_at_vertex(u_h, V):
+def plot_at_vertex(u_h, V, wireframe=False):
     """ Plot the solution projected in 3D at the dof location """
     fig = plt.figure()
     axes = fig.add_subplot(1, 1, 1, projection="3d")
     u_plot = u_h.reshape(V.mesh.grid[0].shape)
     mycmap = plt.get_cmap('viridis')
-    surface = axes.plot_surface(V.mesh.grid[0],
-                                V.mesh.grid[1], u_plot, cmap=mycmap)
-    fig.colorbar(surface, ax=axes)
+    if wireframe:
+        import matplotlib.cm as cm
+        norm = plt.Normalize(u_plot.min(), u_plot.max())
+        colors = cm.viridis(norm(u_plot))
+        rcount, ccount, _ = colors.shape
+        surface = axes.plot_surface(V.mesh.grid[0],
+                                    V.mesh.grid[1], u_plot,
+                                    rcount=rcount, ccount=ccount,
+                                    facecolors=colors, shade=False)
+        surface.set_facecolor((0, 0, 0, 0))
+    else:
+        surface = axes.plot_surface(V.mesh.grid[0],
+                                    V.mesh.grid[1], u_plot,
+                                    cmap=mycmap)
+
+        fig.colorbar(surface, ax=axes)
     axes.set_xlabel('$x$', fontsize=20)
     axes.set_ylabel('$y$', fontsize=20)
     axes.set_zlabel('$u_h$', fontsize=20)
     plt.savefig("u_h.png")
 
 
-def plot_custom(u_h, V, Nx):
+def plot_custom(u_h, V, Nx, wireframe=False):
     """
     Plot solution on a custom grid with Nx^2 elements
     """
@@ -46,10 +59,21 @@ def plot_custom(u_h, V, Nx):
 
     fig = plt.figure()
     axes = fig.add_subplot(1, 1, 1, projection="3d")
-    mycmap = plt.get_cmap('viridis')
-    surface = axes.plot_surface(plot_mesh.grid[0],
-                                plot_mesh.grid[1], Z, cmap=mycmap)
-    fig.colorbar(surface, ax=axes)
+    if wireframe:
+        import matplotlib.cm as cm
+        norm = plt.Normalize(Z.min(), Z.max())
+        colors = cm.viridis(norm(Z))
+        rcount, ccount, _ = colors.shape
+        surface = axes.plot_surface(plot_mesh.grid[0],
+                                    plot_mesh.grid[1], Z,
+                                    rcount=rcount, ccount=ccount,
+                                    facecolors=colors, shade=False)
+        surface.set_facecolor((0, 0, 0, 0))
+    else:
+        mycmap = plt.get_cmap('viridis')
+        surface = axes.plot_surface(plot_mesh.grid[0],
+                                    plot_mesh.grid[1], Z, cmap=mycmap)
+        fig.colorbar(surface, ax=axes)
     axes.set_xlabel('$x$', fontsize=20)
     axes.set_ylabel('$y$', fontsize=20)
     axes.set_zlabel('$u_h$', fontsize=20)
